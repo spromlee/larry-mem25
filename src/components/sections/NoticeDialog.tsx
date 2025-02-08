@@ -1,0 +1,96 @@
+import { Dialog, DialogContent, DialogTitle, IconButton, Typography } from '@mui/material';
+import { Close as CloseIcon, LocationOn, AccessTime, CalendarToday } from '@mui/icons-material';
+import Image from 'next/image';
+
+interface Notice {
+  _id: string;
+  title?: string;
+  description: string;
+  imageUrl?: string;
+  location?: string;
+  time?: string;
+  date?: string;
+  createdAt: string;
+}
+
+interface NoticeDialogProps {
+  notice: Notice | null;
+  open: boolean;
+  onClose: () => void;
+}
+
+export default function NoticeDialog({ notice, open, onClose }: NoticeDialogProps) {
+  if (!notice) return null;
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="md"
+      fullWidth
+      scroll="paper"
+      sx={{
+        '& .MuiDialog-paper': {
+          borderRadius: '15px',
+        },
+      }}
+    >
+      <DialogTitle className="flex justify-between items-center pr-4">
+        <Typography variant="h5" component="h2" className="font-medium">
+          {notice.title || 'Notice'}
+        </Typography>
+        <IconButton onClick={onClose} size="small">
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
+      <DialogContent dividers>
+        {notice.imageUrl && (
+          <div className="relative w-full h-64 mb-6 rounded-lg overflow-hidden">
+            <Image
+              src={notice.imageUrl}
+              alt={notice.title || 'Notice image'}
+              fill
+              className="object-cover"
+            />
+          </div>
+        )}
+
+        <Typography variant="body1" className="mb-6 whitespace-pre-line">
+          {notice.description}
+        </Typography>
+
+        <div className="flex flex-wrap gap-4 text-gray-600 mt-4">
+          {notice.location && (
+            <div className="flex items-center gap-1">
+              <LocationOn className="text-gray-400" />
+              <Typography variant="body2">{notice.location}</Typography>
+            </div>
+          )}
+          {notice.date && (
+            <div className="flex items-center gap-1">
+              <CalendarToday className="text-gray-400" />
+              <Typography variant="body2">{notice.date}</Typography>
+            </div>
+          )}
+          {notice.time && (
+            <div className="flex items-center gap-1">
+              <AccessTime className="text-gray-400" />
+              <Typography variant="body2">{notice.time}</Typography>
+            </div>
+          )}
+          <Typography variant="body2" className="ml-auto text-gray-400">
+            Posted on {formatDate(notice.createdAt)}
+          </Typography>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
