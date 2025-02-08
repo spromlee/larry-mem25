@@ -3,11 +3,6 @@
 import { useState } from 'react';
 import { 
   LocationOn, 
-  Cake, 
-  School, 
-  Favorite, 
-  Celebration, 
-  ChildCare 
 } from '@mui/icons-material';
 
 interface TimelineEvent {
