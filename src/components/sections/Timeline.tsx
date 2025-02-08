@@ -70,23 +70,10 @@ const timelineData: TimelineEvent[] = [
   },
 ];
 
-const getEventIcon = (type: TimelineEvent['type']) => {
-  switch (type) {
-    case 'birth':
-      return <Cake className="text-pink-500" />;
-    case 'education':
-      return <School className="text-blue-500" />;
-    case 'meeting':
-      return <Favorite className="text-red-500" />;
-    case 'wedding':
-      return <Celebration className="text-purple-500" />;
-    case 'child':
-      return <ChildCare className="text-green-500" />;
-  }
-};
+
 
 export default function Timeline() {
-  const [events, setEvents] = useState<TimelineEvent[]>(timelineData);
+  const [events] = useState<TimelineEvent[]>(timelineData);
 
   return (
     <section id="timeline" className="pt-10 pb-16 font-inter">

@@ -19,7 +19,7 @@ import {
   MenuItem,
   InputBase,
 } from '@mui/material';
-import { AddPhotoAlternate, Close, Search } from '@mui/icons-material';
+import { Close, Search } from '@mui/icons-material';
 import ImageDialog from './ImageDialog';
 import { LuNotebookPen } from 'react-icons/lu';
 import { IoCloudUploadOutline } from 'react-icons/io5';
@@ -174,7 +174,7 @@ export default function MemoryWall() {
           <div>
             <h2 className="text-3xl font-roboto-condensed">Memory Wall</h2>
             <div className="h-1 w-[80px] bg-primary mb-8"></div>
-            <p className="text-gray-600 italic lg:text-lg text-base">"To live in the hearts we leave behind is not to die." <br />
+            <p className="text-gray-600 italic lg:text-lg text-base">&ldquo;To live in the hearts we leave behind is not to die.&rdquo; <br />
             Please share your Photos and Memories about Ellen.</p>
           </div>
           <div className='flex md:flex-row flex-col justify-between md:items-center items-start gap-4 mt-6 mb-6'>
