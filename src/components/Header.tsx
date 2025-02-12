@@ -66,7 +66,7 @@ export default function Header() {
                       <span>December 31<sup>st</sup>, 2024</span>
                       
                     </p>
-                    <p className="text-base font-light mt-2 flex items-center gap-2"><GrLocation className='text-xl text-primary' /> Cleveland, Ohio</p>
+                    <p className="text-base font-light mt-2 flex items-center gap-2"><GrLocation className='text-xl text-primary' /> San Francisco, CA</p>
                   </div>
                 </div>
               </div>

@@ -36,18 +36,18 @@ export default function Gallery() {
   const [open, setOpen] = useState(false);
   const [images, setImages] = useState<GalleryImage[]>([]);
   const [loading, setLoading] = useState(false);
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [caption, setCaption] = useState('');
-  const [email, setEmail] = useState('');
   const [category, setCategory] = useState('');
+  const [email, setEmail] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [previewUrl, setPreviewUrl] = useState<string>('');
   const [selectedImage, setSelectedImage] = useState<GalleryImage | null>(null);
   const [mounted, setMounted] = useState(false);
   const [imageDimensions, setImageDimensions] = useState<{[key: string]: number}>({});
   const [isSlideshow, setIsSlideshow] = useState(false);
 
-  const categories = ['All', 'Portrait', 'Family activities', 'Loving couple'];
+  const categoriesList = ['All', 'Portrait', 'Family activities', 'Loving couple'];
 
   useEffect(() => {
     fetchImages();
@@ -79,59 +79,75 @@ export default function Gallery() {
   }, [images, imageDimensions]);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    const file = acceptedFiles[0];
-    if (file) {
-      setUploadedFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
-    }
-  }, []);
+    // Limit to 100 images
+    const filesToAdd = acceptedFiles.slice(0, 100 - uploadedFiles.length);
+    
+    const newFiles = [...uploadedFiles, ...filesToAdd];
+    const newPreviewUrls = newFiles.map(file => URL.createObjectURL(file));
+    
+    setUploadedFiles(newFiles);
+    setPreviewUrls(newPreviewUrls);
+  }, [uploadedFiles]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      'image/*': ['.jpeg', '.jpg', '.png'],
+      'image/*': ['.jpeg', '.jpg', '.png', '.gif', '.webp'],
     },
-    maxFiles: 1,
+    multiple: true,
+    maxFiles: 100,
   });
 
+  const removeFile = (indexToRemove: number) => {
+    const newFiles = uploadedFiles.filter((_, index) => index !== indexToRemove);
+    const newPreviewUrls = previewUrls.filter((_, index) => index !== indexToRemove);
+    
+    setUploadedFiles(newFiles);
+    setPreviewUrls(newPreviewUrls);
+  };
+
   const handleUpload = async () => {
-    if (!uploadedFile || !caption || !email || !category) return;
+    if (!uploadedFiles.length || !email) return;
 
     try {
       setLoading(true);
-      // Upload to Firebase Storage
-      const storageRef = ref(storage, `gallery/${Date.now()}_${uploadedFile.name}`);
-      const snapshot = await uploadBytes(storageRef, uploadedFile);
-      const downloadUrl = await getDownloadURL(snapshot.ref);
+      
+      // Upload images sequentially
+      for (const file of uploadedFiles) {
+        // Upload to Firebase Storage
+        const storageRef = ref(storage, `gallery/${Date.now()}_${file.name}`);
+        const snapshot = await uploadBytes(storageRef, file);
+        const downloadUrl = await getDownloadURL(snapshot.ref);
 
-      // Save to MongoDB
-      const response = await fetch('/api/gallery', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          imageUrl: downloadUrl,
-          caption,
-          email,
-          category,
-        }),
-      });
+        // Save to MongoDB
+        const response = await fetch('/api/gallery', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            imageUrl: downloadUrl,
+            caption: caption || '',
+            email,
+            category: category || '',
+          }),
+        });
 
-      if (!response.ok) throw new Error('Failed to save image');
+        if (!response.ok) throw new Error('Failed to save image');
+        
+        // Refresh images after each upload to show progressive loading
+        await fetchImages();
+      }
 
       // Reset form
-      setUploadedFile(null);
+      setUploadedFiles([]);
+      setPreviewUrls([]);
       setCaption('');
-      setEmail('');
       setCategory('');
-      setPreviewUrl('');
+      setEmail('');
       setOpen(false);
-      
-      // Refresh images
-      fetchImages();
     } catch (error) {
-      console.error('Error uploading image:', error);
+      console.error('Error uploading images:', error);
     } finally {
       setLoading(false);
     }
@@ -172,7 +188,7 @@ export default function Gallery() {
 
         {/* Category Filter Buttons */}
         <div className="flex gap-2 mb-6 flex-wrap items-center">
-          {categories.map((cat) => (
+          {categoriesList.map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
@@ -265,11 +281,11 @@ export default function Gallery() {
           open={open}
           onClose={() => {
             setOpen(false);
-            setUploadedFile(null);
-            setPreviewUrl('');
+            setUploadedFiles([]);
+            setPreviewUrls([]);
             setCaption('');
-            setEmail('');
             setCategory('');
+            setEmail('');
           }}
         >
           <Box className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg p-6 w-full max-w-lg flex flex-col gap-4">
@@ -288,44 +304,47 @@ export default function Gallery() {
               }`}
             >
               <input {...getInputProps()} />
-              {previewUrl ? (
-                <div className="relative h-48 w-full">
-                  <Image
-                    src={previewUrl}
-                    alt="Preview"
-                    fill
-                    className="object-contain"
-                  />
+              {previewUrls.length > 0 ? (
+                <div 
+                  className="grid grid-cols-3 gap-2 max-h-[300px] overflow-y-auto custom-scrollbar"
+                  style={{ 
+                    scrollbarWidth: 'thin', 
+                    scrollbarColor: '#4CB6D4 #f3f4f6' 
+                  }}
+                >
+                  {previewUrls.map((url, index) => (
+                    <div key={index} className="relative h-24 w-full group">
+                      <Image
+                        src={url}
+                        alt={`Preview ${index + 1}`}
+                        fill
+                        className="object-contain"
+                      />
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeFile(index);
+                        }}
+                        className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Close fontSize="small" />
+                      </button>
+                    </div>
+                  ))}
+                  {previewUrls.length < 100 && (
+                    <div className='flex flex-col items-center justify-center gap-2 border-2 border-dashed h-24'>
+                      <IoCloudUploadOutline className='text-2xl text-gray-500' />
+                      <p className='text-gray-500 text-xs'>Add more</p>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className='flex flex-col items-center justify-center gap-2'>
                   <IoCloudUploadOutline className='text-2xl text-gray-500' />
-                  <p className='text-gray-500 text-sm'>Drag and drop an image here, or click to select</p>
+                  <p className='text-gray-500 text-sm'>Drag and drop images here, or click to select</p>
                 </div>
               )}
             </div>
-
-            <TextField
-              select
-              fullWidth
-              label="Category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="mb-4"
-            >
-              {categories.slice(1).map((cat) => (
-                <MenuItem key={cat} value={cat}>
-                  {cat}
-                </MenuItem>
-              ))}
-            </TextField>
-            <TextField
-              fullWidth
-              label="Caption"
-              value={caption}
-              onChange={(e) => setCaption(e.target.value)}
-              className="mb-4"
-            />
 
             <TextField
               fullWidth
@@ -336,12 +355,35 @@ export default function Gallery() {
               className="mb-4"
             />
 
+            <TextField
+              fullWidth
+              label="Caption (Optional)"
+              value={caption}
+              onChange={(e) => setCaption(e.target.value)}
+              className="mb-4"
+            />
+
+            <TextField
+              select
+              fullWidth
+              label="Category (Optional)"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="mb-4"
+            >
+              <MenuItem value="">None</MenuItem>
+              {categoriesList.slice(1).map((cat) => (
+                <MenuItem key={cat} value={cat}>
+                  {cat}
+                </MenuItem>
+              ))}
+            </TextField>
 
             <Button
               fullWidth
               variant="contained"
               onClick={handleUpload}
-              disabled={!uploadedFile || !caption || !email || !category || loading}
+              disabled={!uploadedFiles.length || !email || loading}
               sx={{
                 backgroundColor: '#4CB6D4',
                 '&:hover': {

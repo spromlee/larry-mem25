@@ -23,9 +23,8 @@ export default function Slideshow({ images, isOpen, onClose }: SlideshowProps) {
   useEffect(() => {
     if (!isOpen) return;
 
-    // Start playing music when slideshow opens
     if (audioRef.current) {
-      audioRef.current.volume = 0.2; // Set volume to 70%
+      audioRef.current.volume = 0.2;
       audioRef.current.play().catch(error => {
         console.log('Audio autoplay failed:', error);
       });
@@ -33,11 +32,10 @@ export default function Slideshow({ images, isOpen, onClose }: SlideshowProps) {
 
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % images.length);
-    }, 4000); // Change slide every 4 seconds
+    }, 5000);
 
     return () => {
       clearInterval(interval);
-      // Stop music when slideshow closes
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.currentTime = 0;
@@ -45,7 +43,6 @@ export default function Slideshow({ images, isOpen, onClose }: SlideshowProps) {
     };
   }, [isOpen, images.length]);
 
-  // Set initial volume when audio element is loaded
   const handleAudioLoad = () => {
     if (audioRef.current) {
       audioRef.current.volume = 0.2;
@@ -86,7 +83,6 @@ export default function Slideshow({ images, isOpen, onClose }: SlideshowProps) {
         className="relative w-full h-full flex items-center justify-center"
         onClick={e => e.stopPropagation()}
       >
-        {/* Background Music */}
         <audio
           ref={audioRef}
           src="/assets/music/background-music.mp3"
@@ -95,7 +91,6 @@ export default function Slideshow({ images, isOpen, onClose }: SlideshowProps) {
           onLoadedData={handleAudioLoad}
         />
 
-        {/* Sound Control */}
         <button
           onClick={toggleMute}
           className="absolute top-6 left-6 text-white hover:text-gray-300 transition-colors z-[110] cursor-pointer"
@@ -113,7 +108,6 @@ export default function Slideshow({ images, isOpen, onClose }: SlideshowProps) {
           )}
         </button>
 
-        {/* Close button */}
         <button
           onClick={handleClose}
           className="absolute top-6 right-6 text-white hover:text-gray-300 transition-colors z-[110] cursor-pointer"
@@ -121,7 +115,6 @@ export default function Slideshow({ images, isOpen, onClose }: SlideshowProps) {
           <IoClose className="text-4xl" />
         </button>
 
-        {/* Navigation buttons */}
         <button
           onClick={handlePrevious}
           className="absolute left-6 text-white hover:text-gray-300 transition-colors z-[110] cursor-pointer"
@@ -135,17 +128,16 @@ export default function Slideshow({ images, isOpen, onClose }: SlideshowProps) {
           <BsChevronRight className="text-4xl" />
         </button>
 
-        {/* Image */}
-        <div className="relative w-full h-full p-20 duration-1000 transition-opacity">
+        <div className="relative w-full h-full p-20">
           <Image
+            key={currentIndex}
             src={images[currentIndex].imageUrl}
             alt={images[currentIndex].caption}
             fill
-            className="object-contain"
+            className="object-contain animate-fade-in transition-opacity duration-1000"
             quality={100}
             priority
           />
-          {/* Caption */}
           <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white lg:mx-28 mx-4 p-4 pb-6 text-center">
             <p className="font-roboto-condensed lg:text-base text-sm">{images[currentIndex].caption}</p>
           </div>

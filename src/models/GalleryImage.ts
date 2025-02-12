@@ -3,11 +3,11 @@ import mongoose, { Schema } from 'mongoose';
 // Define the interface for GalleryImage document
 interface IGalleryImage {
   imageUrl: string;
-  caption: string;
+  caption?: string;
   email: string;
   isApproved: boolean;
   uploadedAt: Date;
-  category: string;
+  category?: string;
 }
 
 const galleryImageSchema = new Schema<IGalleryImage>({
@@ -17,7 +17,7 @@ const galleryImageSchema = new Schema<IGalleryImage>({
   },
   caption: {
     type: String,
-    required: true,
+    required: false,
   },
   email: {
     type: String,
@@ -25,8 +25,8 @@ const galleryImageSchema = new Schema<IGalleryImage>({
   },
   category: {
     type: String,
-    required: true,
-    enum: ['Portrait', 'Family activities', 'Loving couple'],
+    required: false,
+    enum: ['Portrait', 'Family activities', 'Loving couple', ''],
   },
   isApproved: {
     type: Boolean,

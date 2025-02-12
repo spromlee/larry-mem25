@@ -17,9 +17,9 @@ const navItems: NavItem[] = [
     icon: <MdOutlineMenuBook className="md:text-2xl text-xl" />,
   },
   {
-    id: 'gallery',
-    label: 'Gallery',
-    icon: <IoImage className="md:text-2xl text-xl" />,
+    id: 'timeline',
+    label: 'Timeline',
+    icon: <TbTimelineEventMinus className="md:text-2xl text-xl" />,
   },
   {
     id: 'memory-wall',
@@ -32,9 +32,9 @@ const navItems: NavItem[] = [
     icon: <MdNotificationAdd className="md:text-2xl text-xl" />,
   },
   {
-    id: 'timeline',
-    label: 'Timeline',
-    icon: <TbTimelineEventMinus className="md:text-2xl text-xl" />,
+    id: 'gallery',
+    label: 'Gallery',
+    icon: <IoImage className="md:text-2xl text-xl" />,
   },
 ];
 
