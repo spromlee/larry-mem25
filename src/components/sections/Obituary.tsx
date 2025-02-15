@@ -1,5 +1,5 @@
-import Obituary1 from '@/assets/ob1.jpg';
-import Obituary2 from '@/assets/ob2.jpg';
+import Obituary1 from '@/assets/ob2.jpg';
+import Obituary2 from '@/assets/ob1.jpg';
 import Obituary3 from '@/assets/ob3.jpg';
 import Obituary4 from '@/assets/ob4.jpg';
 import Obituary5 from '@/assets/ob5.jpg';
