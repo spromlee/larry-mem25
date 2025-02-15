@@ -1,7 +1,7 @@
 
 import Header from "@/components/Header";
 import Navigation from "@/components/Navigation";
-import Obituary from "@/components/sections/Obituary";
+import Obituary from "@/components/sections/Obituary"
 import Gallery from "@/components/sections/Gallery";
 import Notice from "@/components/sections/Notice";
 import Timeline from "@/components/sections/Timeline";
