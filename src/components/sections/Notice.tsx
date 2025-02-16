@@ -14,6 +14,7 @@ interface Notice {
   title?: string;
   description: string;
   imageUrl?: string;
+  pdfUrl?: string;
   location?: string;
   time?: string;
   date?: string;
@@ -174,7 +175,7 @@ export default function Notice() {
                       variant="contained"
                       color="primary"
                       onClick={() => handleOpenDialog(notice)}
-                      className="mt-4"
+                      className="mt-4 !md:text-sm !text-xs"
                       sx={{
                         backgroundColor: '#4CB6D4',
                         '&:hover': {
@@ -192,6 +193,30 @@ export default function Notice() {
                     >
                       View Full Notice
                     </Button>
+                    {notice.pdfUrl && (
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        href={notice.pdfUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-2 !ml-2 !md:text-sm !text-xs"
+                        sx={{
+                          borderColor: '#4CB6D4',
+                          color: '#4CB6D4',
+                          '&:hover': {
+                            backgroundColor: 'rgba(76, 182, 212, 0.1)',
+                            borderColor: '#4CB6D4',
+                          },
+                          textTransform: 'none',
+                          borderRadius: '0.75rem',
+                          padding: '0.4rem 1rem',
+                          fontWeight: 500,
+                        }}
+                      >
+                        Download PDF
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               </div>

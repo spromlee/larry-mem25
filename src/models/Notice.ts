@@ -4,6 +4,7 @@ export interface INotice extends Document {
   title?: string;
   description: string;
   imageUrl?: string;
+  pdfUrl?: string;  // New field for PDF upload
   location?: string;
   time?: string;
   date?: string;
@@ -14,6 +15,7 @@ const NoticeSchema: Schema = new Schema({
   title: { type: String },
   description: { type: String, required: true },
   imageUrl: { type: String },
+  pdfUrl: { type: String },  // Add to schema
   location: { type: String },
   time: { type: String },
   date: { type: String },
