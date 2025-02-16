@@ -41,8 +41,25 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     await connectDB();
-    const id = req.url.split('/').pop();
-    await Notice.findByIdAndDelete(id);
+    const searchParams = req.nextUrl.searchParams;
+    const id = searchParams.get('id');
+    
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: 'Notice ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const deletedNotice = await Notice.findByIdAndDelete(id);
+
+    if (!deletedNotice) {
+      return NextResponse.json(
+        { success: false, error: 'Notice not found' },
+        { status: 404 }
+      );
+    }
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting notice:', error);

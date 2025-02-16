@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 import { IoClose } from 'react-icons/io5';
-import { BsChevronLeft, BsChevronRight } from 'react-icons/bs';
+import { BsChevronLeft, BsChevronRight, BsShuffle } from 'react-icons/bs';
 import { IoMdVolumeHigh, IoMdVolumeOff } from 'react-icons/io';
 
 interface SlideshowProps {
@@ -18,34 +18,67 @@ interface SlideshowProps {
 export default function Slideshow({ images, isOpen, onClose }: SlideshowProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
+  const [isRandom, setIsRandom] = useState(false);
+  const [areImagesLoaded, setAreImagesLoaded] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  const preloadImages = async () => {
+    const promises = images.map((image) => {
+      return new Promise((resolve, reject) => {
+        const img = new window.Image();
+        img.src = image.imageUrl;
+        img.onload = resolve;
+        img.onerror = reject;
+      });
+    });
+
+    await Promise.all(promises);
+    setAreImagesLoaded(true);
+  };
 
   useEffect(() => {
     if (!isOpen) return;
 
-    // Start playing music when slideshow opens
+    preloadImages().catch((error) => {
+      console.error('Error preloading images:', error);
+      setAreImagesLoaded(true); // Fallback in case of error
+    });
+
     if (audioRef.current) {
-      audioRef.current.volume = 0.2; // Set volume to 70%
+      audioRef.current.volume = 0.2;
       audioRef.current.play().catch(error => {
         console.log('Audio autoplay failed:', error);
       });
     }
 
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % images.length);
-    }, 4000); // Change slide every 4 seconds
-
     return () => {
-      clearInterval(interval);
-      // Stop music when slideshow closes
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.currentTime = 0;
       }
     };
-  }, [isOpen, images.length]);
+  }, [isOpen]);
 
-  // Set initial volume when audio element is loaded
+  const toggleRandom = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsRandom(!isRandom);
+  };
+
+  useEffect(() => {
+    if (!isOpen || !areImagesLoaded) return;
+
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => {
+        if (isRandom) {
+          return Math.floor(Math.random() * images.length);
+        }
+        return (prev + 1) % images.length;
+      });
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [isOpen, images.length, areImagesLoaded, isRandom]);
+
   const handleAudioLoad = () => {
     if (audioRef.current) {
       audioRef.current.volume = 0.2;
@@ -82,75 +115,85 @@ export default function Slideshow({ images, isOpen, onClose }: SlideshowProps) {
       className="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center"
       onClick={handleClose}
     >
-      <div 
-        className="relative w-full h-full flex items-center justify-center"
-        onClick={e => e.stopPropagation()}
-      >
-        {/* Background Music */}
-        <audio
-          ref={audioRef}
-          src="/assets/music/background-music.mp3"
-          loop
-          preload="auto"
-          onLoadedData={handleAudioLoad}
-        />
+      <audio
+        ref={audioRef}
+        src="/assets/music/background-music.mp3"
+        loop
+        preload="auto"
+        onLoadedData={handleAudioLoad}
+      />
 
-        {/* Sound Control */}
-        <button
-          onClick={toggleMute}
-          className="absolute top-6 left-6 text-white hover:text-gray-300 transition-colors z-[110] cursor-pointer"
+      {!areImagesLoaded ? (
+        <div className="text-white text-xl animate-pulse">
+          Please wait for a while!
+        </div>
+      ) : (
+        <div 
+          className="relative w-full h-full flex items-center justify-center"
+          onClick={e => e.stopPropagation()}
         >
-          {isMuted ? (
-            <p className='flex items-center gap-1 bg-white rounded-full px-4 py-1.5 text-black text-sm'>
-              <IoMdVolumeOff className="text-2xl" />
-              Play Music
-            </p>
-          ) : (
-            <p className='flex items-center gap-1 bg-white rounded-full px-4 py-1.5 text-black text-sm'>
-              <IoMdVolumeHigh className="text-2xl" />
-              Mute Music
-            </p>
-          )}
-        </button>
+          <div className="absolute top-6 left-6 flex gap-2 z-[110]">
+            <button
+              onClick={toggleMute}
+              className="flex items-center gap-1 bg-white rounded-full px-4 py-1.5 text-black text-sm hover:bg-gray-100 transition-colors"
+            >
+              {isMuted ? (
+                <>
+                  <IoMdVolumeOff className="md:text-2xl text-xl" />
+                  <span className='md:text-sm text-xs'>Play Music</span>
+                </>
+              ) : (
+                <>
+                  <IoMdVolumeHigh className="md:text-2xl text-xl" />
+                  <span className='md:text-sm text-xs'>Mute Music</span>
+                </>
+              )}
+            </button>
+            <button
+              onClick={toggleRandom}
+              className="flex items-center gap-1 bg-white rounded-full px-4 py-1.5 text-black md:text-sm text-xs hover:bg-gray-100 transition-colors"
+            >
+              <BsShuffle className="md:text-2xl text-xl" />
+              {isRandom ? 'Random On' : 'Random Off'}
+            </button>
+          </div>
 
-        {/* Close button */}
-        <button
-          onClick={handleClose}
-          className="absolute top-6 right-6 text-white hover:text-gray-300 transition-colors z-[110] cursor-pointer"
-        >
-          <IoClose className="text-4xl" />
-        </button>
+          <button
+            onClick={handleClose}
+            className="absolute top-6 right-6 text-white hover:text-gray-300 transition-colors z-[110] cursor-pointer"
+          >
+            <IoClose className="text-4xl" />
+          </button>
 
-        {/* Navigation buttons */}
-        <button
-          onClick={handlePrevious}
-          className="absolute left-6 text-white hover:text-gray-300 transition-colors z-[110] cursor-pointer"
-        >
-          <BsChevronLeft className="text-4xl" />
-        </button>
-        <button
-          onClick={handleNext}
-          className="absolute right-6 text-white hover:text-gray-300 transition-colors z-[110] cursor-pointer"
-        >
-          <BsChevronRight className="text-4xl" />
-        </button>
+          <button
+            onClick={handlePrevious}
+            className="absolute left-6 text-white hover:text-gray-300 transition-colors z-[110] cursor-pointer"
+          >
+            <BsChevronLeft className="text-4xl" />
+          </button>
+          <button
+            onClick={handleNext}
+            className="absolute right-6 text-white hover:text-gray-300 transition-colors z-[110] cursor-pointer"
+          >
+            <BsChevronRight className="text-4xl" />
+          </button>
 
-        {/* Image */}
-        <div className="relative w-full h-full p-20 duration-1000 transition-opacity">
-          <Image
-            src={images[currentIndex].imageUrl}
-            alt={images[currentIndex].caption}
-            fill
-            className="object-contain"
-            quality={100}
-            priority
-          />
-          {/* Caption */}
-          <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white lg:mx-28 mx-4 p-4 pb-6 text-center">
-            <p className="font-roboto-condensed lg:text-base text-sm">{images[currentIndex].caption}</p>
+          <div className="relative w-[95%] h-[98%] p-20">
+            <Image
+              key={currentIndex}
+              src={images[currentIndex].imageUrl}
+              alt={images[currentIndex].caption}
+              fill
+              className="object-contain animate-fade-in transition-opacity duration-1000"
+              quality={100}
+              priority
+            />
+            <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white lg:mx-28 mx-4 p-4 pb-6 text-center">
+              <p className="font-roboto-condensed lg:text-base text-sm">{images[currentIndex].caption}</p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

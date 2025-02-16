@@ -81,18 +81,36 @@ export default function AdminDashboard() {
   const [noticeTime, setNoticeTime] = useState('');
   const [noticeImage, setNoticeImage] = useState<File | null>(null);
   const [noticeImagePreview, setNoticeImagePreview] = useState('');
+  const [noticePdf, setNoticePdf] = useState<File | null>(null);
+  const [noticePdfPreview, setNoticePdfPreview] = useState('');
+  const [publishSuccess, setPublishSuccess] = useState(false);
+  const [publishLoading, setPublishLoading] = useState(false);
   const rowsPerPage = 8;
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps: getImageRootProps, getInputProps: getImageInputProps } = useDropzone({
     onDrop: (acceptedFiles) => {
       const file = acceptedFiles[0];
-      if (file) {
+      if (file && file.type.startsWith('image/')) {
         setNoticeImage(file);
         setNoticeImagePreview(URL.createObjectURL(file));
       }
     },
     accept: {
-      'image/*': ['.jpeg', '.jpg', '.png'],
+      'image/*': ['.jpeg', '.jpg', '.png', '.gif'],
+    },
+    maxFiles: 1,
+  });
+
+  const { getRootProps: getPdfRootProps, getInputProps: getPdfInputProps } = useDropzone({
+    onDrop: (acceptedFiles) => {
+      const file = acceptedFiles[0];
+      if (file && file.type === 'application/pdf') {
+        setNoticePdf(file);
+        setNoticePdfPreview(URL.createObjectURL(file));
+      }
+    },
+    accept: {
+      'application/pdf': ['.pdf'],
     },
     maxFiles: 1,
   });
@@ -242,61 +260,112 @@ export default function AdminDashboard() {
   };
 
   const handlePublishNotice = async () => {
-    try {
-      setLoading(true);
-      let imageUrl = '';
+    // Validate required fields
+    if (!noticeDescription) {
+      alert('Description is required');
+      return;
+    }
 
+    try {
+      // Set loading state for the button, not the entire page
+      setPublishLoading(true);
+      let imageUrl = '';
+      let pdfUrl = '';
+
+      // Upload image if exists
       if (noticeImage) {
-        const storageRef = ref(storage, `notices/${Date.now()}_${noticeImage.name}`);
-        const snapshot = await uploadBytes(storageRef, noticeImage);
-        imageUrl = await getDownloadURL(snapshot.ref);
+        try {
+          const storageRef = ref(storage, `notices/images/${Date.now()}_${noticeImage.name}`);
+          const snapshot = await uploadBytes(storageRef, noticeImage);
+          imageUrl = await getDownloadURL(snapshot.ref);
+        } catch (uploadError) {
+          console.error('Image upload error:', uploadError);
+          setPublishLoading(false);
+          return;
+        }
       }
 
+      // Upload PDF if exists
+      if (noticePdf) {
+        try {
+          const storageRef = ref(storage, `notices/pdfs/${Date.now()}_${noticePdf.name}`);
+          const snapshot = await uploadBytes(storageRef, noticePdf);
+          pdfUrl = await getDownloadURL(snapshot.ref);
+        } catch (uploadError) {
+          console.error('PDF upload error:', uploadError);
+          setPublishLoading(false);
+          return;
+        }
+      }
+
+      // Payload preparation
+      const payload = {
+        title: noticeTitle,
+        description: noticeDescription,
+        imageUrl,
+        pdfUrl,
+        location: noticeLocation,
+        time: noticeTime,
+        date: noticeDate,
+      };
+
+      // API call
       const response = await fetch('/api/notices', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          title: noticeTitle,
-          description: noticeDescription,
-          imageUrl,
-          location: noticeLocation,
-          time: noticeTime,
-          date: noticeDate,
-        }),
+        body: JSON.stringify(payload),
       });
 
-      if (!response.ok) throw new Error('Failed to publish notice');
+      // Handle response
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+      }
 
-      // Reset form
-      setNoticeTitle('');
-      setNoticeDescription('');
-      setNoticeLocation('');
-      setNoticeDate('');
-      setNoticeTime('');
-      setNoticeImage(null);
-      setNoticeImagePreview('');
-      setNoticeModalOpen(false);
-      
+      // Success
+      setPublishSuccess(true);
+
       // Refresh notices
-      fetchNotices();
+      await fetchNotices();
+
+      // Auto-close modal after 3 seconds
+      setTimeout(() => {
+        // Reset form
+        setNoticeTitle('');
+        setNoticeDescription('');
+        setNoticeLocation('');
+        setNoticeDate('');
+        setNoticeTime('');
+        setNoticeImage(null);
+        setNoticeImagePreview('');
+        setNoticePdf(null);
+        setNoticePdfPreview('');
+        setNoticeModalOpen(false);
+        setPublishSuccess(false);
+      }, 3000);
     } catch (error) {
       console.error('Error publishing notice:', error);
+      alert('Failed to publish notice. Please try again.');
     } finally {
-      setLoading(false);
+      // Ensure loading is set to false
+      setPublishLoading(false);
     }
   };
 
   const handleDeleteNotice = async (id: string) => {
     try {
       setRemoving(id);
-      const response = await fetch(`/api/notices/${id}`, {
+      const response = await fetch(`/api/notices?id=${id}`, {
         method: 'DELETE',
       });
 
-      if (response.ok) {
+      const data = await response.json();
+      if (data.success) {
         setNotices(notices.filter(notice => notice._id !== id));
+      } else {
+        console.error('Failed to delete notice:', data.error);
       }
     } catch (error) {
       console.error('Error deleting notice:', error);
@@ -307,6 +376,7 @@ export default function AdminDashboard() {
 
   const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
     setPage(value);
+    console.log(event)
   };
 
   const getCurrentPageData = () => {
@@ -612,15 +682,36 @@ export default function AdminDashboard() {
           setNoticeTime('');
           setNoticeImage(null);
           setNoticeImagePreview('');
+          setNoticePdf(null);
+          setNoticePdfPreview('');
+          setPublishSuccess(false);
         }}
       >
-        <Box className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg p-6 w-full max-w-2xl flex flex-col gap-4">
+        <Box 
+          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg p-6 w-full max-w-2xl flex flex-col gap-4 max-h-[90vh] overflow-y-auto custom-scrollbar"
+          sx={{
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#4CB6D4 #f3f4f6',
+            '&::-webkit-scrollbar': {
+              width: '8px',
+            },
+            '&::-webkit-scrollbar-track': {
+              background: '#f3f4f6',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              backgroundColor: '#4CB6D4',
+              borderRadius: '4px',
+            },
+          }}
+        >
           <div className="flex justify-between items-center mb-4">
             <Typography variant="h6">Publish Notice</Typography>
             <IconButton onClick={() => setNoticeModalOpen(false)}>
               <Close />
             </IconButton>
           </div>
+
+          
 
           <TextField
             fullWidth
@@ -671,12 +762,12 @@ export default function AdminDashboard() {
           </div>
 
           <div
-            {...getRootProps()}
+            {...getImageRootProps()}
             className={`border-2 border-dashed rounded-lg p-4 mb-4 text-center cursor-pointer ${
-              isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+              noticeImagePreview ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
             }`}
           >
-            <input {...getInputProps()} />
+            <input {...getImageInputProps()} />
             {noticeImagePreview ? (
               <div className="relative h-48 w-full">
                 <Image
@@ -691,14 +782,41 @@ export default function AdminDashboard() {
             )}
           </div>
 
+          <div
+            {...getPdfRootProps()}
+            className={`border-2 border-dashed rounded-lg p-4 mb-4 text-center cursor-pointer ${
+              noticePdfPreview ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+            }`}
+          >
+            <input {...getPdfInputProps()} />
+            {noticePdfPreview ? (
+              <div className="relative h-48 w-full">
+                <embed
+                  src={noticePdfPreview}
+                
+                  type="application/pdf"
+                  className="object-contain w-full h-full"
+                />
+              </div>
+            ) : (
+              <p>Drag and drop a PDF here, or click to select (Optional)</p>
+            )}
+          </div>
+
+          {publishSuccess && (
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+              <span className="block sm:inline">Notice published successfully!</span>
+            </div>
+          )}
+
           <Button
             fullWidth
             variant="contained"
             onClick={handlePublishNotice}
-            disabled={!noticeDescription || loading}
+            disabled={!noticeDescription || publishLoading}
             className="!bg-primary !hover:bg-primaryLight !text-white !py-2 !px-6 rounded-lg"
           >
-            {loading ? <CircularProgress size={24} /> : 'Publish'}
+            {publishLoading ? <CircularProgress size={24} /> : 'Publish'}
           </Button>
         </Box>
       </Modal>

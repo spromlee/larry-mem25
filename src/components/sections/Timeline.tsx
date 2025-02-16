@@ -9,7 +9,7 @@ interface TimelineEvent {
   _id: string;
   year: number;
   month: string;
-  day: number;
+  day?: number;
   title: string;
   description?: string;
   location?: string;
@@ -19,50 +19,119 @@ interface TimelineEvent {
 const timelineData: TimelineEvent[] = [
   {
     _id: '1',
-    year: 1973,
-    month: 'March',
-    day: 16,
-    title: 'Birth in San Jose',
-    location: 'San Jose, California',
+    year: 1965,
+    month: 'December',
+    day: 14,
+    title: '',
+    description: 'A bright soul was born, destined to leave a lasting impact.',
     type: 'birth'
   },
   {
     _id: '2',
-    year: 1982,
-    month: 'July',
-    day: 1,
-    title: 'Graduate from University',
-    location: 'University of California - Los Angeles',
+    year: 1984,
+    month: '',
+    title: '',
+    description: 'Graduated from <strong>SRHS</strong>, ready to take on the world.',
     type: 'education'
   },
   {
     _id: '3',
-    year: 1984,
-    month: 'February',
-    day: 14,
-    title: 'Met with Anthony',
-    description: 'Anthony and Joanne met in a school reunion organized by a common friend. Few years later, they will get married',
+    year: 1985,
+    month: '',
+    title: '',
+    description: 'Joined <strong>Wasted Morality</strong>, channeling his passion for music.',
     type: 'meeting'
   },
   {
     _id: '4',
-    year: 1989,
-    month: 'June',
-    day: 9,
-    title: 'Wedding',
-    description: 'Anthony and Joanne got married in a beautiful yet intimate wedding',
-    location: 'California',
+    year: 1990,
+    month: '',
+    title: '',
+    description: 'Became a managing partner and singer for <strong>The Bleeding Stone</strong>, sharing his voice and heart.',
     type: 'wedding'
   },
   {
     _id: '5',
-    year: 1992,
-    month: 'October',
-    day: 18,
-    title: 'Birth of Emily',
-    description: 'Birth of Emily, their first child',
+    year: 2006,
+    month: 'May',
+    day: 27,
+    title: '',
+    description: '<strong>Married</strong> the love of his life in <strong>Las Vegas</strong>, beginning a journey of love and adventure.',
+    type: 'wedding'
+  },
+  {
+    _id: '6',
+    year: 2008,
+    month: 'April',
+    title: '',
+    description: 'Welcomed <strong>Elljay</strong>, embracing the joy of fatherhood.',
     type: 'child'
   },
+  {
+    _id: '7',
+    year: 2008,
+    month: '',
+    title: '',
+    description: 'Founded <strong>Jenner Headlands Hawkwatch</strong>, dedicating himself to conservation.',
+    type: 'education'
+  },
+  {
+    _id: '8',
+    year: 2009,
+    month: 'July',
+    title: '',
+    description: 'Celebrated the birth of <strong>Preston</strong>, filling his world with more love.',
+    type: 'child'
+  },
+  {
+    _id: '9',
+    year: 2011,
+    month: 'June',
+    day: 12,
+    title: '',
+    description: 'Renewed vows in a <strong>Cambodian wedding</strong>, honoring love and tradition.',
+    type: 'wedding'
+  },
+  {
+    _id: '10',
+    year: 2011,
+    month: '',
+    title: '',
+    description: 'Earned his <strong>Wildlands Conservation & Management</strong> certification at <strong>SRJC</strong>.',
+    type: 'education'
+  },
+  {
+    _id: '11',
+    year: 2012,
+    month: '',
+    title: '',
+    description: 'Welcomed <strong>Tyler</strong>, completing his beautiful family.',
+    type: 'child'
+  },
+  {
+    _id: '12',
+    year: 2019,
+    month: 'December',
+    title: '',
+    description: 'Discovered the beauty of <strong>Maui</strong> on his first island adventure.',
+    type: 'meeting'
+  },
+  {
+    _id: '13',
+    year: 2024,
+    month: 'June',
+    title: '',
+    description: 'Made priceless memories on a <strong>Disney World family vacation.</strong> ',
+    type: 'meeting'
+  },
+  {
+    _id: '14',
+    year: 2024,
+    month: '',
+    title: '',
+    description: 'Took his final flight, soaring into the great beyond, leaving behind a legacy of love, music, and passion that will forever echo in the hearts of those who knew him.',
+    type: 'birth'
+  }
 ];
 
 
@@ -86,13 +155,15 @@ export default function Timeline() {
                 {/* Year Circle with Icon */}
                 <div className="relative">
                   <div className="md:w-28 md:h-28 w-24 h-24 rounded-full bg-white shadow-md flex flex-col items-center justify-center z-10 relative">
-                    <p className="text-primary font-medium md:text-lg text-base">
+                    <p className="text-primary font-semibold md:text-xl text-lg">
                       {event.year}
                     </p>
-                    <div className="text-gray-500 text-[11px] md:text-sm">
-                      {event.month} {event.day}
-                      <sup className="text-[8px] md:text-xs">th</sup>
-                    </div>
+                    {event.month && (
+                      <div className="text-gray-500 text-[11px] md:text-sm">
+                        {event.month} {event.day && <span>{event.day}</span>}
+                        <sup className="text-[8px] md:text-xs"></sup>
+                      </div>
+                    )}
                   </div>
                   {/* Event Icon */}
                 </div>
@@ -102,22 +173,19 @@ export default function Timeline() {
                 <div className="flex-1 relative">
                   <div className="absolute left-0 top-1/2 -translate-x-[60%] -translate-y-1/2 flex items-center">
                     
-                    <div className="absolute left-[calc(100%-8px)] top-1/2 -translate-y-1/2 w-6 h-6 z-10 bg-white transform rotate-45 shadow-[rgba(50,_50,_105,_0.15)_0px_2px_5px_0px,_rgba(0,_0,_0,_0.05)_0px_1px_1px_0px]"></div>
+                    <div className="absolute left-[calc(100%-8px)] top-1/2 -translate-y-1/2 w-6 h-6 z-10 bg-primary transform rotate-45 shadow-[rgba(50,_50,_105,_0.15)_0px_2px_5px_0px,_rgba(0,_0,_0,_0.05)_0px_1px_1px_0px]"></div>
                   </div>
                   {/* Left Arrow with Icon */}
 
-                  <div className='flex-1 bg-white rounded-lg shadow-[rgba(50,_50,_105,_0.15)_0px_2px_5px_0px,_rgba(0,_0,_0,_0.05)_0px_1px_1px_0px] md:p-4 p-3 ml-0 min-h-28 transform transition-transform duration-300 hover:-translate-y-1 relative z-20'>
-                    <h2  className="text-primary mb-2 text-base md:text-lg ">
-                      {event.title}
-                    </h2>
+                  <div className='flex-1 flex flex-col justify-center border-l-4 border-primary bg-white rounded-lg shadow-[rgba(50,_50,_105,_0.15)_0px_2px_5px_0px,_rgba(0,_0,_0,_0.05)_0px_1px_1px_0px] md:p-4 p-3 ml-0 min-h-24 transform transition-transform duration-300 hover:-translate-y-1 relative z-20'>
                     
                     {event.description && (
-                      <p  className="text-gray-600 mb-3 md:text-base text-sm">
-                        {event.description}
+                      <p  className="text-gray-600 mb-3 md:text-base text-sm text-left">
+                        <span dangerouslySetInnerHTML={{ __html: event.description }} />
                       </p>
                     )}
                     {event.location && (
-                      <div className="flex items-center gap-1 text-gray-500">
+                      <div className="flex items-center gap-1 text-gray-500 justify-center">
                         <LocationOn className="text-gray-400" fontSize="small" />
                         <p className="text-base font-inter" >
                           {event.location}

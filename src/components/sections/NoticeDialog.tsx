@@ -1,5 +1,5 @@
-import { Dialog, DialogContent, DialogTitle, IconButton, Typography } from '@mui/material';
-import { Close as CloseIcon, LocationOn, AccessTime, CalendarToday } from '@mui/icons-material';
+import { Dialog, DialogContent, DialogTitle, DialogActions, IconButton, Typography, Button } from '@mui/material';
+import { Close as CloseIcon, LocationOn, AccessTime, CalendarToday, PictureAsPdf } from '@mui/icons-material';
 import Image from 'next/image';
 
 interface Notice {
@@ -7,6 +7,7 @@ interface Notice {
   title?: string;
   description: string;
   imageUrl?: string;
+  pdfUrl?: string;
   location?: string;
   time?: string;
   date?: string;
@@ -40,6 +41,21 @@ export default function NoticeDialog({ notice, open, onClose }: NoticeDialogProp
       sx={{
         '& .MuiDialog-paper': {
           borderRadius: '15px',
+          maxHeight: '90vh',
+        },
+        '& .MuiDialogContent-root': {
+          overflowY: 'auto',
+          maxHeight: 'calc(90vh - 200px)', // Adjust based on title and actions height
+          '&::-webkit-scrollbar': {
+            width: '8px',
+          },
+          '&::-webkit-scrollbar-track': {
+            background: '#f3f4f6',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: '#4CB6D4',
+            borderRadius: '4px',
+          },
         },
       }}
     >
@@ -91,6 +107,33 @@ export default function NoticeDialog({ notice, open, onClose }: NoticeDialogProp
           </Typography>
         </div>
       </DialogContent>
+      
+      {/* PDF Download Button */}
+      {notice.pdfUrl && (
+        <DialogActions>
+          <Button
+            variant="contained"
+            color="primary"
+            href={notice.pdfUrl}
+            className='!md:text-sm !text-xs'
+            target="_blank"
+            rel="noopener noreferrer"
+            startIcon={<PictureAsPdf />}
+            sx={{
+              backgroundColor: '#4CB6D4',
+              '&:hover': {
+                backgroundColor: '#C0C0C0',
+              },
+              textTransform: 'none',
+              borderRadius: '0.75rem',
+              padding: '0.5rem 1rem',
+              fontWeight: 500,
+            }}
+          >
+            Download PDF
+          </Button>
+        </DialogActions>
+      )}
     </Dialog>
   );
 }
