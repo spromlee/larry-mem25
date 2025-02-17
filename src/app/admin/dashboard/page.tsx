@@ -24,6 +24,7 @@ import {
   IconButton,
 } from '@mui/material';
 import { AddPhotoAlternate, Close } from '@mui/icons-material';
+import { Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
 import { useDropzone } from 'react-dropzone';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/lib/firebase';
@@ -85,7 +86,9 @@ export default function AdminDashboard() {
   const [noticePdfPreview, setNoticePdfPreview] = useState('');
   const [publishSuccess, setPublishSuccess] = useState(false);
   const [publishLoading, setPublishLoading] = useState(false);
-  const rowsPerPage = 8;
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<{ id: string; type: 'gallery' | 'memory' } | null>(null);
+  const rowsPerPage = 20;
 
   const { getRootProps: getImageRootProps, getInputProps: getImageInputProps } = useDropzone({
     onDrop: (acceptedFiles) => {
@@ -379,6 +382,39 @@ export default function AdminDashboard() {
     console.log(event)
   };
 
+  const handleDeleteClick = (id: string, type: 'gallery' | 'memory') => {
+    setItemToDelete({ id, type });
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!itemToDelete) return;
+
+    try {
+      const endpoint = itemToDelete.type === 'gallery' 
+        ? `/api/gallery?id=${itemToDelete.id}`
+        : `/api/memories?id=${itemToDelete.id}`;
+
+      const response = await fetch(endpoint, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        if (itemToDelete.type === 'gallery') {
+          setImages(images.filter(img => img._id !== itemToDelete.id));
+        } else {
+          setMemories(memories.filter(mem => mem._id !== itemToDelete.id));
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting item:', error);
+    } finally {
+      setDeleteDialogOpen(false);
+      setItemToDelete(null);
+    }
+  };
+
   const getCurrentPageData = () => {
     const startIndex = (page - 1) * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
@@ -509,33 +545,45 @@ export default function AdminDashboard() {
                     </TableCell>
                     <TableCell>
                       {galleryItem.isApproved ? (
+                      <div className="flex gap-2">
                         <Button
-                          variant="contained"
-                          color="error"
-                          onClick={() => handleRemove(galleryItem._id, 'gallery')}
-                          disabled={removing === galleryItem._id}
-                          className="bg-red-600 hover:bg-red-700"
+                        variant="contained"
+                        color="error"
+                        onClick={() => handleRemove(galleryItem._id, 'gallery')}
+                        disabled={removing === galleryItem._id}
+                        className="bg-red-600 hover:bg-red-700"
                         >
-                          {removing === galleryItem._id ? (
-                            <CircularProgress size={24} />
-                          ) : (
-                            'Remove'
-                          )}
+                        {removing === galleryItem._id ? <CircularProgress size={24} /> : 'Remove'}
                         </Button>
+                        <Button
+                        variant="contained"
+                        color="error"
+                        onClick={() => handleDeleteClick(galleryItem._id, 'gallery')}
+                        className="bg-red-800 hover:bg-red-900"
+                        >
+                        Delete
+                        </Button>
+                      </div>
                       ) : (
+                      <div className="flex gap-2">
                         <Button
-                          variant="contained"
-                          color="primary"
-                          onClick={() => handleApprove(galleryItem._id, 'gallery')}
-                          disabled={approving === galleryItem._id}
-                          className="bg-gray-800 hover:bg-gray-700"
+                        variant="contained"
+                        color="primary"
+                        onClick={() => handleApprove(galleryItem._id, 'gallery')}
+                        disabled={approving === galleryItem._id}
+                        className="bg-gray-800 hover:bg-gray-700"
                         >
-                          {approving === galleryItem._id ? (
-                            <CircularProgress size={24} />
-                          ) : (
-                            'Approve'
-                          )}
+                        {approving === galleryItem._id ? <CircularProgress size={24} /> : 'Approve'}
                         </Button>
+                        <Button
+                        variant="contained"
+                        color="error"
+                        onClick={() => handleDeleteClick(galleryItem._id, 'gallery')}
+                        className="bg-red-800 hover:bg-red-900"
+                        >
+                        Delete
+                        </Button>
+                      </div>
                       )}
                     </TableCell>
                   </TableRow>
@@ -584,33 +632,45 @@ export default function AdminDashboard() {
                     </TableCell>
                     <TableCell>
                       {memoryItem.isApproved ? (
+                      <div className="flex gap-2">
                         <Button
-                          variant="contained"
-                          color="error"
-                          onClick={() => handleRemove(memoryItem._id, 'memory')}
-                          disabled={removing === memoryItem._id}
-                          className="bg-red-600 hover:bg-red-700"
+                        variant="contained"
+                        color="error"
+                        onClick={() => handleRemove(memoryItem._id, 'memory')}
+                        disabled={removing === memoryItem._id}
+                        className="bg-red-600 hover:bg-red-700"
                         >
-                          {removing === memoryItem._id ? (
-                            <CircularProgress size={24} />
-                          ) : (
-                            'Remove'
-                          )}
+                        {removing === memoryItem._id ? <CircularProgress size={24} /> : 'Remove'}
                         </Button>
+                        <Button
+                        variant="contained"
+                        color="error"
+                        onClick={() => handleDeleteClick(memoryItem._id, 'memory')}
+                        className="bg-red-800 hover:bg-red-900"
+                        >
+                        Delete
+                        </Button>
+                      </div>
                       ) : (
+                      <div className="flex gap-2">
                         <Button
-                          variant="contained"
-                          color="primary"
-                          onClick={() => handleApprove(memoryItem._id, 'memory')}
-                          disabled={approving === memoryItem._id}
-                          className="bg-gray-800 hover:bg-gray-700"
+                        variant="contained"
+                        color="primary"
+                        onClick={() => handleApprove(memoryItem._id, 'memory')}
+                        disabled={approving === memoryItem._id}
+                        className="bg-gray-800 hover:bg-gray-700"
                         >
-                          {approving === memoryItem._id ? (
-                            <CircularProgress size={24} />
-                          ) : (
-                            'Approve'
-                          )}
+                        {approving === memoryItem._id ? <CircularProgress size={24} /> : 'Approve'}
                         </Button>
+                        <Button
+                        variant="contained"
+                        color="error"
+                        onClick={() => handleDeleteClick(memoryItem._id, 'memory')}
+                        className="bg-red-800 hover:bg-red-900"
+                        >
+                        Delete
+                        </Button>
+                      </div>
                       )}
                     </TableCell>
                   </TableRow>
@@ -624,7 +684,7 @@ export default function AdminDashboard() {
                       <div className="max-w-md truncate" dangerouslySetInnerHTML={{ __html: noticeItem.description }} />
                     </TableCell>
                     <TableCell>{noticeItem.location || '-'}</TableCell>
-                    <TableCell>{noticeItem.date || '-'}</TableCell>
+                    <TableCell className='whitespace-nowrap'>{noticeItem.date || '-'}</TableCell>
                     <TableCell>{noticeItem.time || '-'}</TableCell>
                     <TableCell>
                       {noticeItem.imageUrl && (
@@ -819,7 +879,27 @@ export default function AdminDashboard() {
             {publishLoading ? <CircularProgress size={24} /> : 'Publish'}
           </Button>
         </Box>
-      </Modal>
-    </Container>
+        </Modal>
+
+        <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        >
+        <DialogTitle>Confirm Deletion</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+          Are you sure you want to delete this {itemToDelete?.type === 'gallery' ? 'image' : 'memory'}? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)} color="primary">
+          Cancel
+          </Button>
+          <Button onClick={handleDeleteConfirm} color="error" variant="contained">
+          Delete
+          </Button>
+        </DialogActions>
+        </Dialog>
+      </Container>
   );
 }

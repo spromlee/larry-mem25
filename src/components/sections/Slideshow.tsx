@@ -20,7 +20,16 @@ export default function Slideshow({ images, isOpen, onClose }: SlideshowProps) {
   const [isMuted, setIsMuted] = useState(false);
   const [isRandom, setIsRandom] = useState(false);
   const [areImagesLoaded, setAreImagesLoaded] = useState(false);
+  const [currentMusicIndex, setCurrentMusicIndex] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  const musicTracks = [
+    '/assets/music/background-music.mp3',
+    '/assets/music/1-background-music.mp3',
+    '/assets/music/2-track.mp3',
+    '/assets/music/3-track.mp3',
+    '/assets/music/4-track.mp3'
+  ];
 
   const preloadImages = async () => {
     const promises = images.map((image) => {
@@ -36,15 +45,29 @@ export default function Slideshow({ images, isOpen, onClose }: SlideshowProps) {
     setAreImagesLoaded(true);
   };
 
+  const handleMusicEnd = () => {
+    const nextIndex = (currentMusicIndex + 1) % musicTracks.length;
+    setCurrentMusicIndex(nextIndex);
+    if (audioRef.current) {
+      audioRef.current.src = musicTracks[nextIndex];
+      audioRef.current.load();
+      audioRef.current.play().catch(error => {
+        console.log('Audio playback failed:', error);
+      });
+    }
+  };
+
   useEffect(() => {
     if (!isOpen) return;
 
     preloadImages().catch((error) => {
       console.error('Error preloading images:', error);
-      setAreImagesLoaded(true); // Fallback in case of error
+      setAreImagesLoaded(true);
     });
 
     if (audioRef.current) {
+      audioRef.current.src = musicTracks[currentMusicIndex];
+      audioRef.current.load();
       audioRef.current.volume = 0.2;
       audioRef.current.play().catch(error => {
         console.log('Audio autoplay failed:', error);
@@ -57,7 +80,7 @@ export default function Slideshow({ images, isOpen, onClose }: SlideshowProps) {
         audioRef.current.currentTime = 0;
       }
     };
-  }, [isOpen]);
+  }, [isOpen, currentMusicIndex]);
 
   const toggleRandom = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -74,7 +97,7 @@ export default function Slideshow({ images, isOpen, onClose }: SlideshowProps) {
         }
         return (prev + 1) % images.length;
       });
-    }, 5000);
+    }, 10000);
 
     return () => clearInterval(interval);
   }, [isOpen, images.length, areImagesLoaded, isRandom]);
@@ -112,16 +135,16 @@ export default function Slideshow({ images, isOpen, onClose }: SlideshowProps) {
 
   return (
     <div 
-      className="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center"
+      className="fixed inset-0 bg-black z-[100] flex items-center justify-center"
       onClick={handleClose}
     >
-      <audio
+        <audio
         ref={audioRef}
-        src="/assets/music/background-music.mp3"
-        loop
+        src={musicTracks[currentMusicIndex]}
         preload="auto"
         onLoadedData={handleAudioLoad}
-      />
+        onEnded={handleMusicEnd}
+        />
 
       {!areImagesLoaded ? (
         <div className="text-white text-xl animate-pulse">

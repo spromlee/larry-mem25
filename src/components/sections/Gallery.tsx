@@ -47,6 +47,8 @@ export default function Gallery() {
   const [imageDimensions, setImageDimensions] = useState<{[key: string]: number}>({});
   const [isSlideshow, setIsSlideshow] = useState(false);
 
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
   const categoriesList = ['All', 'Portrait', 'Family activities', 'Loving couple'];
 
   useEffect(() => {
@@ -169,6 +171,26 @@ export default function Gallery() {
     selectedCategory === 'All' || image.category === selectedCategory
   );
 
+
+  const handleImageClick = (image: GalleryImage) => {
+    const index = filteredImages.findIndex(img => img._id === image._id);
+    setCurrentImageIndex(index);
+    setSelectedImage(image);
+  };
+  
+  // Add navigation handlers
+  const handleNext = () => {
+    const newIndex = (currentImageIndex + 1) % filteredImages.length;
+    setCurrentImageIndex(newIndex);
+    setSelectedImage(filteredImages[newIndex]);
+  };
+  
+  const handlePrevious = () => {
+    const newIndex = (currentImageIndex - 1 + filteredImages.length) % filteredImages.length;
+    setCurrentImageIndex(newIndex);
+    setSelectedImage(filteredImages[newIndex]);
+  };
+
   return (
     <section id="gallery" className="pt-10 pb-16 bg-white font-inter">
       <div className="container mx-auto px-4">
@@ -264,7 +286,7 @@ export default function Gallery() {
                   />
                   <div 
                     className="absolute inset-0 bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center cursor-pointer"
-                    onClick={() => setSelectedImage(image)}
+                    onClick={() => handleImageClick(image)}
                   >
                     <div className='xl:w-24 xl:h-24 lg:w-16 lg:h-16 w-10 h-10 rounded-full bg-gray-600 bg-opacity-60 flex items-center justify-center'>
                       <Add className="text-white opacity-100 xl:text-4xl lg:text-2xl text-base"  />
@@ -343,7 +365,7 @@ export default function Gallery() {
               ) : (
                 <div className='flex flex-col items-center justify-center gap-2'>
                   <IoCloudUploadOutline className='text-2xl text-gray-500' />
-                  <p className='text-gray-500 text-sm'>Drag and drop images here, or click to select</p>
+                  <p className='text-gray-500 text-sm'>Drag and drop images here, or click to select (Max file size 20MB)</p>
                 </div>
               )}
             </div>
@@ -415,11 +437,13 @@ export default function Gallery() {
 
         {/* Image Dialog */}
         <ImageDialog
-          open={!!selectedImage}
-          onClose={() => setSelectedImage(null)}
-          imageUrl={selectedImage?.imageUrl || ''}
-          caption={selectedImage?.caption || ''}
-        />
+  open={!!selectedImage}
+  onClose={() => setSelectedImage(null)}
+  imageUrl={selectedImage?.imageUrl || ''}
+  caption={selectedImage?.caption || ''}
+  onNext={handleNext}
+  onPrevious={handlePrevious}
+/>
       </div>
     </section>
   );
