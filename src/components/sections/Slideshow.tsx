@@ -24,7 +24,6 @@ export default function Slideshow({ images, isOpen, onClose }: SlideshowProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const musicTracks = [
-    '/assets/music/background-music.mp3',
     '/assets/music/1-background-music.mp3',
     '/assets/music/2-track.mp3',
     '/assets/music/3-track.mp3',
