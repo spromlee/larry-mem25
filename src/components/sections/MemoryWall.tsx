@@ -61,7 +61,6 @@ export default function MemoryWall() {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMemory, setSelectedMemory] = useState<{

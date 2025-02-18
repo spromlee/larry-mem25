@@ -122,11 +122,31 @@ export default function AdminDashboard() {
     const isAuthenticated = Cookies.get('admin_authenticated') === 'true';
     if (!isAuthenticated) {
       router.push('/admin');
-      return;
     }
-    // Initial data load
+  }, [router]); // Only keep router as dependency
+  
+  useEffect(() => {
+    if (!router) return;
+  
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        if (activeTab === 0) {
+          await fetchImages();
+        } else if (activeTab === 1) {
+          await fetchMemories();
+        } else {
+          await fetchNotices();
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+  
     fetchData();
-  }, [router]);
+  }, [activeTab, router]); 
 
   useEffect(() => {
     if (activeTab === 0) {
