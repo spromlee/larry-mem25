@@ -21,7 +21,7 @@ const timelineData: TimelineEvent[] = [
     _id: '1',
     year: 1965,
     month: 'December',
-    day: 14,
+    day: 13,
     title: '',
     description: 'A bright soul was born, destined to leave a lasting impact.',
     type: 'birth'

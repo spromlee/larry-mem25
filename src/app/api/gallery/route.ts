@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import { GalleryImage } from '@/models/GalleryImage';
+import { storage } from '@/lib/firebase';
+import { ref, deleteObject } from 'firebase/storage';
 
 export async function POST(request: Request) {
   try {
@@ -85,6 +87,53 @@ export async function PUT(request: Request) {
     console.error('Error updating image:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to update image' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    await connectDB();
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: 'Image ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const image = await GalleryImage.findById(id);
+    if (!image) {
+      return NextResponse.json(
+        { success: false, error: 'Image not found' },
+        { status: 404 }
+      );
+    }
+
+    // Delete from Firebase Storage
+    try {
+      const imageUrl = new URL(image.imageUrl);
+      const imagePath = decodeURIComponent(imageUrl.pathname.substring(1));
+      const imageRef = ref(storage, imagePath);
+      await deleteObject(imageRef);
+    } catch (error) {
+      console.error('Error deleting image from storage:', error);
+    }
+
+    // Delete from database
+    await GalleryImage.findByIdAndDelete(id);
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Image deleted successfully' 
+    });
+  } catch (error) {
+    console.error('Error deleting image:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to delete image' },
       { status: 500 }
     );
   }

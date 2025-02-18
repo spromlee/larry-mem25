@@ -61,9 +61,12 @@ export default function MemoryWall() {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedMemory, setSelectedMemory] = useState<{
+    memory: Memory;
+    photoIndex: number;
+  } | null>(null);
 
   useEffect(() => {
     fetchMemories();
@@ -166,6 +169,28 @@ export default function MemoryWall() {
       day: 'numeric',
     });
   };
+
+
+  const handlePhotoClick = (memory: Memory, index: number) => {
+    setSelectedMemory({ memory, photoIndex: index });
+  };
+  
+  // Add navigation handlers
+  const handleNext = () => {
+    if (selectedMemory) {
+      const nextIndex = (selectedMemory.photoIndex + 1) % selectedMemory.memory.photos!.length;
+      setSelectedMemory({ ...selectedMemory, photoIndex: nextIndex });
+    }
+  };
+  
+  const handlePrevious = () => {
+    if (selectedMemory) {
+      const prevIndex = (selectedMemory.photoIndex - 1 + selectedMemory.memory.photos!.length) % 
+                        selectedMemory.memory.photos!.length;
+      setSelectedMemory({ ...selectedMemory, photoIndex: prevIndex });
+    }
+  };
+  
 
   return (
     <section id="memory-wall" className="pt-10 pb-16 bg-white font-inter">
@@ -280,7 +305,7 @@ export default function MemoryWall() {
                         <div 
                           key={index} 
                           className="relative h-24 w-24 cursor-pointer hover:opacity-80 transition-opacity"
-                          onClick={() => setSelectedImage(photo)}
+                          onClick={() => handlePhotoClick(memory, index)}
                         >
                           <Image
                             src={photo}
@@ -379,7 +404,7 @@ export default function MemoryWall() {
                 ) : (
                   <div className='flex flex-col items-center justify-center gap-2'>
                   <IoCloudUploadOutline className='text-2xl text-gray-500' />
-                  <p className='text-gray-500 text-sm'>Drag and drop an image here, or click to select (Optional)</p>
+                  <p className='text-gray-500 text-sm'>Drag and drop an image here, or click to select - Max 20MB (Optional) </p>
                 </div>
                 )}
               </div>
@@ -411,10 +436,13 @@ export default function MemoryWall() {
 
           {/* Image Dialog */}
           <ImageDialog
-            open={!!selectedImage}
-            onClose={() => setSelectedImage(null)}
-            imageUrl={selectedImage || ''}
-          />
+  open={!!selectedMemory}
+  onClose={() => setSelectedMemory(null)}
+  imageUrl={selectedMemory?.memory.photos?.[selectedMemory.photoIndex] || ''}
+ 
+  onNext={handleNext}
+  onPrevious={handlePrevious}
+/>
         </div>
       </div>
     </section>
