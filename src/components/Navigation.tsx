@@ -28,7 +28,7 @@ const navItems: NavItem[] = [
   },
   {
     id: 'notice',
-    label: 'Notice',
+    label: 'Notices',
     icon: <MdNotificationAdd className="md:text-2xl text-xl" />,
   },
   {
