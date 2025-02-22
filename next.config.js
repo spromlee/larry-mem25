@@ -9,6 +9,9 @@ const nextConfig = {
         pathname: '/v0/b/**',
       },
     ],
+    domains: [
+      'firebasestorage.googleapis.com'
+    ],
   },
 }
 
