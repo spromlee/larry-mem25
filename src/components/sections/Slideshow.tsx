@@ -357,6 +357,7 @@ export default function Slideshow({ images, isOpen, onClose }: SlideshowProps) {
                 priority
                 sizes="(max-width: 768px) 100vw, 75vw"
                 loading="eager"
+                unoptimized
               />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center">

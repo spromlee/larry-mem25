@@ -75,6 +75,7 @@ export default function ImageDialog({ open, onClose, imageUrl, caption, onPrevio
               alt={caption || 'Image'}
               fill
               className="object-contain md:px-10 px-4"
+              unoptimized
             />
           </div>
 
