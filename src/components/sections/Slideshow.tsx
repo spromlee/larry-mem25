@@ -24,9 +24,11 @@ export default function Slideshow({ images, isOpen, onClose }: SlideshowProps) {
   const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
   const [currentMusicIndex, setCurrentMusicIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const slideshowRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const isPlayingRef = useRef(false);
+  const preloadedImages = useRef<{ [key: number]: HTMLImageElement }>({});
 
   const musicTracks = [
     '/assets/music/background-music.mp3',
@@ -35,32 +37,82 @@ export default function Slideshow({ images, isOpen, onClose }: SlideshowProps) {
     '/assets/music/4-track.mp3'
   ];
 
-  const preloadImages = async () => {
-    // Preload current image and next image only
-    const imagesToPreload = [
-      currentIndex,
-      (currentIndex + 1) % images.length
+  const preloadImage = async (index: number) => {
+    if (loadedImages.has(index) || !images[index]) return;
+
+    return new Promise((resolve) => {
+      const img = new window.Image();
+      img.src = images[index].imageUrl;
+      img.onload = () => {
+        preloadedImages.current[index] = img;
+        setLoadedImages(prev => new Set([...prev, index]));
+        resolve(undefined);
+      };
+      img.onerror = () => {
+        console.error(`Failed to load image at index ${index}`);
+        resolve(undefined);
+      };
+    });
+  };
+
+  const preloadAdjacentImages = async (currentIdx: number) => {
+    const totalImages = images.length;
+    const indicesToLoad = [
+      currentIdx,
+      (currentIdx + 1) % totalImages,
+      (currentIdx + 2) % totalImages,
+      (currentIdx - 1 + totalImages) % totalImages
     ];
 
-    const promises = imagesToPreload.map((index) => {
-      if (loadedImages.has(index)) return Promise.resolve();
-      
-      return new Promise((resolve) => {
-        const img = new window.Image();
-        img.src = images[index].imageUrl;
-        img.onload = () => {
-          setLoadedImages(prev => new Set([...prev, index]));
-          resolve(undefined);
-        };
-        img.onerror = () => {
-          console.error(`Failed to load image at index ${index}`);
-          resolve(undefined);
-        };
-      });
-    });
-
-    await Promise.all(promises);
+    const uniqueIndices = [...new Set(indicesToLoad)];
+    await Promise.all(uniqueIndices.map(idx => preloadImage(idx)));
   };
+
+  // Effect for preloading images
+  useEffect(() => {
+    if (!isOpen) return;
+    preloadAdjacentImages(currentIndex);
+  }, [isOpen, currentIndex, images.length]);
+
+  const handleImageChange = (newIndex: number) => {
+    setIsTransitioning(true);
+    setCurrentIndex(newIndex);
+    
+    // Start preloading the next set of images
+    preloadAdjacentImages(newIndex);
+
+    // Reset transition state after animation
+    setTimeout(() => {
+      setIsTransitioning(false);
+    }, 1000); // Match this with your CSS transition duration
+  };
+
+  const handlePrevious = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newIndex = (currentIndex - 1 + images.length) % images.length;
+    handleImageChange(newIndex);
+  };
+
+  const handleNext = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newIndex = (currentIndex + 1) % images.length;
+    handleImageChange(newIndex);
+  };
+
+  // Modify the automatic slideshow interval
+  useEffect(() => {
+    if (!isOpen || !loadedImages.has(currentIndex)) return;
+
+    const interval = setInterval(() => {
+      const newIndex = isRandom
+        ? Math.floor(Math.random() * images.length)
+        : (currentIndex + 1) % images.length;
+      
+      handleImageChange(newIndex);
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [isOpen, images.length, loadedImages, isRandom, currentIndex]);
 
   const playTrack = async (index: number, retryCount = 0) => {
     if (!audioRef.current || retryCount > 3) return;
@@ -151,34 +203,10 @@ export default function Slideshow({ images, isOpen, onClose }: SlideshowProps) {
     };
   }, [isOpen]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-
-    preloadImages().catch((error) => {
-      console.error('Error preloading images:', error);
-    });
-  }, [isOpen, currentIndex]);
-
   const toggleRandom = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsRandom(!isRandom);
   };
-
-  useEffect(() => {
-    if (!isOpen || !loadedImages.has(currentIndex)) return;
-
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => {
-        if (isRandom) {
-          return Math.floor(Math.random() * images.length);
-        }
-        return (prev + 1) % images.length;
-      });
-    }, 10000);
-
-    return () => clearInterval(interval);
-  }, [isOpen, images.length, loadedImages, isRandom, currentIndex]);
-
 
   const toggleFullscreen = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -210,16 +238,6 @@ export default function Slideshow({ images, isOpen, onClose }: SlideshowProps) {
 
   if (!isOpen) return null;
 
-  const handlePrevious = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
-  };
-
-  const handleNext = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setCurrentIndex((prev) => (prev + 1) % images.length);
-  };
-
   return (
     <div 
       className="fixed inset-0 bg-black z-[100] flex items-center justify-center"
@@ -241,9 +259,13 @@ export default function Slideshow({ images, isOpen, onClose }: SlideshowProps) {
       />
 
       {!loadedImages.has(currentIndex) ? (
-        <div className="text-white text-xl animate-pulse flex items-center gap-2">
-          <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-          Loading...
+        <div className="text-center">
+          <h2 className="text-white text-3xl md:text-4xl lg:text-5xl font-bold mb-4 animate-fade-in">
+            Rest In Peace, Larry!
+          </h2>
+          <div className="text-gray-300 text-lg md:text-xl animate-pulse">
+            Loading memories...
+          </div>
         </div>
       ) : (
         <div 
@@ -322,16 +344,30 @@ export default function Slideshow({ images, isOpen, onClose }: SlideshowProps) {
           )}
 
           <div className="relative w-[95%] h-[98%] p-20">
-            <Image
-              key={currentIndex}
-              src={images[currentIndex].imageUrl}
-              alt={images[currentIndex].caption}
-              fill
-              className="object-contain animate-fade-in transition-opacity duration-1000"
-              quality={100}
-              priority
-            />
-            {!isFullscreen && (
+            {loadedImages.has(currentIndex) ? (
+              <Image
+                key={currentIndex}
+                src={images[currentIndex].imageUrl}
+                alt={images[currentIndex].caption}
+                fill
+                className={`object-contain transition-opacity duration-1000 ${
+                  isTransitioning ? 'opacity-0' : 'opacity-100'
+                }`}
+                quality={75}
+                priority
+                sizes="(max-width: 768px) 100vw, 75vw"
+                loading="eager"
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-white text-xl animate-pulse flex items-center gap-2">
+                  <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Loading...
+                </div>
+              </div>
+            )}
+            
+            {!isFullscreen && loadedImages.has(currentIndex) && (
               <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white lg:mx-28 mx-4 p-4 pb-6 text-center">
                 <p className="font-roboto-condensed lg:text-base text-sm">{images[currentIndex].caption}</p>
               </div>
