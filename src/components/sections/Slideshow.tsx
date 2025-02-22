@@ -179,11 +179,6 @@ export default function Slideshow({ images, isOpen, onClose }: SlideshowProps) {
     return () => clearInterval(interval);
   }, [isOpen, images.length, loadedImages, isRandom, currentIndex]);
 
-  const handleAudioLoad = () => {
-    if (audioRef.current) {
-      audioRef.current.volume = 0.2;
-    }
-  };
 
   const toggleFullscreen = async (e: React.MouseEvent) => {
     e.stopPropagation();
