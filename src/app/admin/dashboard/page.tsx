@@ -528,6 +528,7 @@ export default function AdminDashboard() {
                           alt={galleryItem.caption}
                           fill
                           className="object-cover rounded"
+                          unoptimized
                         />
                       </div>
                     </TableCell>
@@ -607,6 +608,7 @@ export default function AdminDashboard() {
                                 alt={`Photo ${index + 1}`}
                                 fill
                                 className="object-cover rounded"
+                                unoptimized={true}
                               />
                             </div>
                           ))}
@@ -694,6 +696,7 @@ export default function AdminDashboard() {
                             alt={noticeItem.title || 'Notice image'}
                             fill
                             className="object-cover rounded"
+                            unoptimized
                           />
                         </div>
                       )}
@@ -835,6 +838,7 @@ export default function AdminDashboard() {
                   alt="Preview"
                   fill
                   className="object-contain"
+                  unoptimized
                 />
               </div>
             ) : (

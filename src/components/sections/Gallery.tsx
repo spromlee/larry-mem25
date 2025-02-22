@@ -281,7 +281,7 @@ export default function Gallery() {
                     priority={true}
                     width={0}
                     height={0}
-                    unoptimized={false}
+                    unoptimized={true}
                     quality={75}
                   />
                   <div 

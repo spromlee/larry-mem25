@@ -311,6 +311,7 @@ export default function MemoryWall() {
                             src={photo}
                             alt={`Photo by ${memory.fullName}`}
                             fill
+                            unoptimized={true}
                             className="object-cover rounded"
                           />
                         </div>
